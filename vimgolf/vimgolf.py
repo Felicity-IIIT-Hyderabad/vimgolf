@@ -30,7 +30,6 @@ from vimgolf.keys import (
     parse_keycodes,
 )
 
-
 version_txt = os.path.join(os.path.dirname(__file__), 'version.txt')
 with open(version_txt, 'r') as f:
     __version__ = f.read().strip()
@@ -44,7 +43,6 @@ class Status(Enum):
 EXIT_SUCCESS = 0
 EXIT_FAILURE = 1
 
-
 # ************************************************************
 # * Environment
 # ************************************************************
@@ -53,10 +51,11 @@ EXIT_FAILURE = 1
 if sys.platform == 'win32':
     import ctypes
     from ctypes import wintypes
+
     kernel32 = ctypes.windll.kernel32
-    STD_OUTPUT_HANDLE = -11                  # https://docs.microsoft.com/en-us/windows/console/getstdhandle
-    STD_ERROR_HANDLE = -12                   # ditto
-    ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x4 # https://docs.microsoft.com/en-us/windows/console/getconsolemode
+    STD_OUTPUT_HANDLE = -11  # https://docs.microsoft.com/en-us/windows/console/getstdhandle
+    STD_ERROR_HANDLE = -12  # ditto
+    ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x4  # https://docs.microsoft.com/en-us/windows/console/getconsolemode
     for std_device in [STD_OUTPUT_HANDLE, STD_ERROR_HANDLE]:
         handle = kernel32.GetStdHandle(wintypes.DWORD(std_device))
         old_console_mode = wintypes.DWORD()
@@ -64,19 +63,18 @@ if sys.platform == 'win32':
         new_console_mode = wintypes.DWORD(ENABLE_VIRTUAL_TERMINAL_PROCESSING | old_console_mode.value)
         kernel32.SetConsoleMode(handle, new_console_mode)
 
-
 # ************************************************************
 # * Configuration, Global Variables, and Logging
 # ************************************************************
 
-GOLF_HOST = os.environ.get('GOLF_HOST', 'https://www.vimgolf.com')
+GOLF_HOST = os.environ.get('GOLF_HOST', 'http://127.0.0.1:5000')
 GOLF_VIM = os.environ.get('GOLF_VIM', 'vim')
 
 USER_AGENT = 'vimgolf'
 
 RUBY_CLIENT_VERSION_COMPLIANCE = '0.4.8'
 
-EXPANSION_PREFIX='+'
+EXPANSION_PREFIX = '+'
 
 USER_HOME = os.path.expanduser('~')
 
@@ -138,7 +136,6 @@ for log in stale_existing_logs:
     except Exception:
         logger.exception('error deleting stale log: {}'.format(log))
 
-
 # ************************************************************
 # * Utils
 # ************************************************************
@@ -167,12 +164,12 @@ def join_lines(string):
 def write(string, end='\n', stream=None, color=None):
     string = str(string)
     color_lookup = {
-        'red':     '\033[31m',
-        'green':   '\033[32m',
-        'yellow':  '\033[33m',
-        'blue':    '\033[34m',
+        'red': '\033[31m',
+        'green': '\033[32m',
+        'yellow': '\033[33m',
+        'blue': '\033[34m',
         'magenta': '\033[35m',
-        'cyan':    '\033[36m',
+        'cyan': '\033[36m',
     }
     end_color = '\033[0m'
     if color and color not in color_lookup:
@@ -243,8 +240,10 @@ def find_executable_unix(executable):
 
 def find_executable_win32(executable):
     """Emulates how cmd.exe seemingly searches for executables."""
+
     def fixcase(p):
         return str(Path(p).resolve())
+
     pathext = os.environ.get('PATHEXT', '.EXE')
     pathexts = list(x.upper() for x in pathext.split(os.pathsep))
     _, ext = os.path.splitext(executable)
@@ -278,12 +277,12 @@ def find_executable(executable):
 # ************************************************************
 
 def validate_challenge_id(challenge_id):
-    return challenge_id is not None and re.match(r'[\w\d]{24}', challenge_id)
+    return challenge_id is not None and re.match(r'^\d+$', challenge_id)
 
 
 def show_challenge_id_error():
     write('Invalid challenge ID', stream=sys.stderr, color='red')
-    write('Please check the ID on vimgolf.com', stream=sys.stderr, color='red')
+    write(f'Please check the ID on {GOLF_HOST}', stream=sys.stderr, color='red')
 
 
 def validate_api_key(api_key):
@@ -306,13 +305,13 @@ def set_api_key(api_key):
 
 
 def show_api_key_help():
-    write('An API key can be obtained from vimgolf.com', color='yellow')
+    write(f'An API key can be obtained from {GOLF_HOST}', color='yellow')
     write('Please run "vimgolf config API_KEY" to set your API key', color='yellow')
 
 
 def show_api_key_error():
     write('Invalid API key', stream=sys.stderr, color='red')
-    write('Please check your API key on vimgolf.com', stream=sys.stderr, color='red')
+    write(f'Please check your API key on {GOLF_HOST}', stream=sys.stderr, color='red')
 
 
 def get_id_lookup():
@@ -355,11 +354,11 @@ def upload_result(challenge_id, api_key, raw_keys):
     logger.info('upload_result(...)')
     status = Status.FAILURE
     try:
-        url = urllib.parse.urljoin(GOLF_HOST, '/entry.json')
+        url = urllib.parse.urljoin(GOLF_HOST, '/submit')
         data_dict = {
             'challenge_id': challenge_id,
-            'apikey':       api_key,
-            'entry':        raw_keys,
+            'apikey': api_key,
+            'entry': raw_keys,
         }
         data = urllib.parse.urlencode(data_dict).encode()
         response = http_request(url, data=data)
@@ -435,14 +434,14 @@ def play(challenge, workspace):
 
         vimrc = os.path.join(os.path.dirname(__file__), 'vimgolf.vimrc')
         play_args = [
-            '-Z',          # restricted mode, utilities not allowed
-            '-n',          # no swap file, memory only editing
+            '-Z',  # restricted mode, utilities not allowed
+            '-n',  # no swap file, memory only editing
             '--noplugin',  # no plugins
             '-i', 'NONE',  # don't load .viminfo (e.g., has saved macros, etc.)
-            '+0',          # start on line 0
-            '-u', vimrc,   # vimgolf .vimrc
+            '+0',  # start on line 0
+            '-u', vimrc,  # vimgolf .vimrc
             '-U', 'NONE',  # don't load .gvimrc
-            '-W', logfile, # keylog file (overwrites existing)
+            '-W', logfile,  # keylog file (overwrites existing)
             infile,
         ]
         try:
@@ -513,7 +512,7 @@ def play(challenge, workspace):
                     upload_eligible = False
                 else:
                     write('The entry upload has failed', stream=sys.stderr, color='red')
-                    message = 'Please check your API key on vimgolf.com'
+                    message = f'Please check your API key on {GOLF_HOST}'
                     write(message, stream=sys.stderr, color='red')
             else:
                 break
@@ -555,7 +554,7 @@ def put(challenge_id):
     api_key = get_api_key()
     if not validate_api_key(api_key):
         write('An API key has not been configured', color='red')
-        write('Uploading to vimgolf.com is disabled', color='red')
+        write(f'Uploading to {GOLF_HOST} is disabled', color='red')
         show_api_key_help()
         if not confirm('Play without uploads?'):
             return Status.FAILURE
@@ -567,9 +566,9 @@ def put(challenge_id):
         challenge_spec = json.loads(response.body)
         compliant = challenge_spec.get('client') == RUBY_CLIENT_VERSION_COMPLIANCE
         if not compliant:
-            message = 'vimgolf=={} is not compliant with vimgolf.com'.format(__version__)
+            message = 'vimgolf=={} is not compliant with {}'.format(__version__, GOLF_HOST)
             write(message, stream=sys.stderr, color='red')
-            write('Uploading to vimgolf.com is disabled', stream=sys.stderr, color='red')
+            write(f'Uploading to {GOLF_HOST} is disabled', stream=sys.stderr, color='red')
             write('vimgolf may not function properly', color='red')
             try:
                 client_compliance_version = StrictVersion(RUBY_CLIENT_VERSION_COMPLIANCE)
@@ -581,17 +580,17 @@ def put(challenge_id):
             if not confirm('Try to play without uploads?'):
                 return Status.FAILURE
 
-        in_text = format_(challenge_spec['in']['data'])
-        out_text = format_(challenge_spec['out']['data'])
-        in_type = challenge_spec['in']['type']
-        out_type = challenge_spec['out']['type']
+        in_text = format_(challenge_spec['in'])
+        out_text = format_(challenge_spec['out'])
+        # in_type = challenge_spec['in']['type']
+        # out_type = challenge_spec['out']['type']
         # Sanitize and add leading dot
-        in_extension = '.{}'.format(re.sub(r'[^\w-]', '_', in_type))
-        out_extension = '.{}'.format(re.sub(r'[^\w-]', '_', out_type))
+        in_extension = ".txt"  # '.{}'.format(re.sub(r'[^\w-]', '_', in_type))
+        out_extension = ".txt"  # '.{}'.format(re.sub(r'[^\w-]', '_', out_type))
     except Exception:
         logger.exception('challenge retrieval failed')
         write('The challenge retrieval has failed', stream=sys.stderr, color='red')
-        write('Please check the challenge ID on vimgolf.com', stream=sys.stderr, color='red')
+        write(f'Please check the challenge ID on {GOLF_HOST}', stream=sys.stderr, color='red')
         return Status.FAILURE
 
     challenge = Challenge(
@@ -608,14 +607,12 @@ def put(challenge_id):
     return status
 
 
-def list_(page=None, limit=LISTING_LIMIT):
-    logger.info('list_(%s, %s)', page, limit)
+def list_(limit=LISTING_LIMIT):
+    logger.info('list_(%s, %s)', limit)
     Listing = namedtuple('Listing', 'id name n_entries')
     try:
         listings = []
-        url = GOLF_HOST
-        if page is not None:
-            url = urllib.parse.urljoin(GOLF_HOST, '/?page={}'.format(page))
+        url = urllib.parse.urljoin(GOLF_HOST, '/list')
         response = http_request(url)
         nodes = parse_html(response.body)
         challenge_elements = get_elements_by_classname(nodes, 'challenge')
@@ -644,7 +641,7 @@ def list_(page=None, limit=LISTING_LIMIT):
         write(listing.id, color='yellow', end=None)
         write(')')
 
-    id_lookup = {str(idx+1): listing.id for idx, listing in enumerate(listings)}
+    id_lookup = {str(idx + 1): listing.id for idx, listing in enumerate(listings)}
     set_id_lookup(id_lookup)
 
     return Status.SUCCESS
@@ -658,46 +655,36 @@ def show(challenge_id):
             show_challenge_id_error()
             return Status.FAILURE
         api_url = urllib.parse.urljoin(GOLF_HOST, '/challenges/{}.json'.format(challenge_id))
-        page_url = get_challenge_url(challenge_id)
+        leader_pageurl = urllib.parse.urljoin(GOLF_HOST, '/challenges_leaderboard/{}.json'.format(challenge_id))
+        pageurl = urllib.parse.urljoin(GOLF_HOST, '/challenges/{}'.format(challenge_id))
+
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_REQUEST_WORKERS) as executor:
-            results = executor.map(http_request, [api_url, page_url])
+            results = executor.map(http_request, [api_url, leader_pageurl])
             api_response = next(results)
             page_response = next(results)
+
         challenge_spec = json.loads(api_response.body)
-        start_file = challenge_spec['in']['data']
+        leader_list = json.loads(page_response.body)
+        start_file = challenge_spec['in']
         if not start_file.endswith('\n'):
             start_file += '\n'
-        end_file = challenge_spec['out']['data']
+        end_file = challenge_spec['out']
         if not end_file.endswith('\n'):
             end_file += '\n'
-        nodes = parse_html(page_response.body)
-        content_element = get_element_by_id(nodes, 'content')
-        content_grid_7_element = get_elements_by_classname(content_element.children, 'grid_7')[0]
-        name_h3 = get_elements_by_tagname(content_grid_7_element.children, 'h3')[0]
-        name = join_lines(get_text([name_h3]).strip())
-        description_p_element = get_elements_by_tagname(content_grid_7_element.children, 'p')[0]
-        description = join_lines(get_text([description_p_element]).strip())
-        content_grid_5_element = get_elements_by_classname(content_element.children, 'grid_5')[0]
         Leader = namedtuple('Leader', 'username score')
         leaders = []
-        leaderboard_divs = get_elements_by_tagname(content_grid_5_element.children, 'div')
-        for leaderboard_div in leaderboard_divs:
-            user_h6 = get_elements_by_tagname(leaderboard_div.children, 'h6')[0]
-            username_anchor = get_elements_by_tagname(user_h6.children, 'a')[1]
-            username = get_text([username_anchor]).strip()
-            if username.startswith('@'):
-                username = username[1:]
-            score_div = get_elements_by_tagname(leaderboard_div.children, 'div')[0]
-            score = int(get_text([score_div]).strip())
+        for username, score in leader_list:
             leader = Leader(username=username, score=score)
             leaders.append(leader)
         separator = '-' * 50
         write(separator)
-        write('{} ('.format(name), end=None)
-        write(challenge_id, color='yellow', end=None)
+
+        write('{} (id: '.format(challenge_spec["title"]), end=None)
+        write(f"{challenge_id}", color='yellow', end=None)
         write(')')
+
         write(separator)
-        write(page_url)
+        write(pageurl)
         write(separator)
         write('Leaderboard', color='green')
         if leaders:
@@ -707,8 +694,9 @@ def show(challenge_id):
                 write('...')
         else:
             write('no entries yet', color='yellow')
+
         write(separator)
-        write(description)
+        write(challenge_spec["desc"])
         write(separator)
         write('Start File', color='green')
         write(start_file, end=None)
@@ -727,6 +715,7 @@ def show(challenge_id):
 
 def config(api_key=None):
     logger.info('config(...)')
+
     if api_key is not None and not validate_api_key(api_key):
         show_api_key_error()
         return Status.FAILURE
