@@ -15,6 +15,7 @@ import sys
 import tempfile
 import urllib.parse
 import urllib.request
+import requests
 
 from vimgolf.html import (
     get_elements_by_classname,
@@ -353,22 +354,22 @@ Challenge = namedtuple('Challenge', [
 
 def upload_result(challenge_id, api_key, raw_keys):
     logger.info('upload_result(...)')
-    status = Status.FAILURE
     try:
         url = urllib.parse.urljoin(GOLF_HOST, f'/submit/{challenge_id}')
         data_dict = {
             'apikey': api_key,
             'entry': raw_keys,
         }
-        data = urllib.parse.urlencode(data_dict).encode()
-        response = http_request(url, data=data)
-        message = json.loads(response.body)
-        if message.get('status') == 'ok':
-            status = Status.SUCCESS
+        response = requests.post(url, data=data_dict)
+
+        if response.status_code >= 400:
+            return Status.FAILURE, response.text
+        print(response.text)
     except Exception as err:
-        print(err)
         logger.exception('upload failed')
-    return status
+        return Status.FAILURE, err
+
+    return Status.SUCCESS, ""
 
 
 def play(challenge, workspace):
@@ -505,7 +506,7 @@ def play(challenge, workspace):
                 diff_args = ['-d', '-n', infile, outfile]
                 vim(diff_args)
             elif selection == 'w':
-                upload_status = upload_result(challenge.id, challenge.api_key, raw_keys)
+                upload_status, err_message = upload_result(challenge.id, challenge.api_key, raw_keys)
                 if upload_status == Status.SUCCESS:
                     write('Uploaded entry!', color='green')
                     leaderboard_url = get_challenge_url(challenge.id)
@@ -513,8 +514,7 @@ def play(challenge, workspace):
                     upload_eligible = False
                 else:
                     write('The entry upload has failed', stream=sys.stderr, color='red')
-                    message = f'Please check your API key on {GOLF_HOST}'
-                    write(message, stream=sys.stderr, color='red')
+                    write(err_message, stream=sys.stderr, color='red')
             else:
                 break
         if selection == 'q':
