@@ -591,46 +591,6 @@ def put(challenge_id):
     return status
 
 
-def list_(limit=LISTING_LIMIT):
-    logger.info('list_(%s, %s)', limit)
-    Listing = namedtuple('Listing', 'id name n_entries')
-    try:
-        listings = []
-        url = urllib.parse.urljoin(GOLF_HOST, '/list')
-        response = http_request(url)
-        nodes = parse_html(response.body)
-        challenge_elements = get_elements_by_classname(nodes, 'challenge')
-        for element in challenge_elements:
-            if len(listings) >= limit:
-                break
-            id_, name, n_entries = None, None, None
-            anchor = get_elements_by_tagname(element.children, 'a')[0]
-            href = anchor.get_attr('href')
-            id_ = href.split('/')[-1]
-            name = anchor.children[0].data
-            for child in element.children:
-                if child.node_type == NodeType.TEXT and 'entries' in child.data:
-                    n_entries = int([x for x in child.data.split() if x.isdigit()][0])
-                    break
-            listing = Listing(id=id_, name=name, n_entries=n_entries)
-            listings.append(listing)
-    except Exception:
-        logger.exception('challenge retrieval failed')
-        write('The challenge list retrieval has failed', stream=sys.stderr, color='red')
-        return Status.FAILURE
-
-    for idx, listing in enumerate(listings):
-        write('{}{} '.format(EXPANSION_PREFIX, idx + 1), end=None)
-        write('{} - {} entries ('.format(listing.name, listing.n_entries), end=None)
-        write(listing.id, color='yellow', end=None)
-        write(')')
-
-    id_lookup = {str(idx + 1): listing.id for idx, listing in enumerate(listings)}
-    set_id_lookup(id_lookup)
-
-    return Status.SUCCESS
-
-
 def show(challenge_id):
     challenge_id = expand_challenge_id(challenge_id)
     logger.info('show(%s)', challenge_id)
@@ -736,7 +696,6 @@ def main(argv=None):
         '  vimgolf config [API_KEY]      # configure your vimgolf.com credentials\n'
         '  vimgolf local INFILE OUTFILE  # launch local challenge\n'
         '  vimgolf put CHALLENGE_ID      # launch vimgolf.com challenge\n'
-        '  vimgolf list [PAGE][:LIMIT]   # list vimgolf.com challenges\n'
         '  vimgolf show CHALLENGE_ID     # show vimgolf.com challenge\n'
         '  vimgolf version               # display the version number'
     )
@@ -758,21 +717,6 @@ def main(argv=None):
             status = Status.FAILURE
         else:
             status = put(argv[2])
-    elif command == 'list':
-        if not len(argv) in (2, 3):
-            usage = 'Usage: "vimgolf list [PAGE]"'
-            write(usage, stream=sys.stderr, color='red')
-            status = Status.FAILURE
-        else:
-            kwargs = {}
-            page_and_limit = argv[2] if len(argv) == 3 else ''
-            parts = page_and_limit.split(':')
-            try:
-                if len(parts) > 0 and parts[0]: kwargs['page'] = int(parts[0])
-                if len(parts) > 1: kwargs['limit'] = int(parts[1])
-            except Exception:
-                pass
-            status = list_(**kwargs)
     elif command == 'show':
         if len(argv) != 3:
             usage = 'Usage: "vimgolf show CHALLENGE_ID"'

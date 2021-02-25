@@ -1,70 +1,26 @@
-[![Build Status](https://github.com/dstein64/vimgolf/workflows/build/badge.svg)](https://github.com/dstein64/vimgolf/actions)
-
-vimgolf
+vimgolf for IIITH
 =======
 
-This project contains a [vimgolf](https://www.vimgolf.com/) client written in Python.
+This project contains a vimgolf client written in Python. It is forked from the Python client [written by dstein64](https://github.com/dstein64/vimgolf).
+It acts as the terminal client to the [main website](https://events.felicity.iiit.ac.in/vimgolf).
 
-The user interface is similar to the [official vimgolf client](https://github.com/igrigorik/vimgolf),
-with a few additions inspired by [vimgolf-finder](https://github.com/kciter/vimgolf-finder).
+### Usage
 
-Installation
-------------
+`git clone` this repo so you can pull changes (if any later).
+
+Keep your working directory as the repo root.
+
+`python -m vimgolf` shows the list of commands.
+
+First run `python -m vimgolf config` to locally store your api key. This will be used to verify the submission is coming from your user account. You can get your apikey [here](https://events.felicity.iiit.ac.in/vimgolf/apikey).
+
+Use `python -m vimgolf put 0` to play the 0-th challenge.  You can view all challenges on the main website.
+
+Good luck and happy golfing!
 
 #### Requirements
 
 - Python 3.5 or greater
-
-#### Install
-
-```sh
-$ pip3 install vimgolf
-```
-
-#### Update
-
-```sh
-$ pip3 install --upgrade vimgolf
-```
-
-Usage
------
-
-#### Launch
-
-If the launcher script was installed within a directory on your `PATH`, vimgolf can be launched
-directly.
-
-```sh
-$ vimgolf
-```
-
-Otherwise, vimgolf can be launched by passing its module name to Python.
-
-```sh
-$ python3 -m vimgolf
-```
-
-#### Commands
-
-```text
-  vimgolf [help]                # display this help and exit
-  vimgolf config [API_KEY]      # configure your VimGolf credentials
-  vimgolf local INFILE OUTFILE  # launch local challenge
-  vimgolf put CHALLENGE_ID      # launch vimgolf.com challenge
-  vimgolf list [PAGE][:LIMIT]   # list vimgolf.com challenges
-  vimgolf show CHALLENGE_ID     # show vimgolf.com challenge
-  vimgolf version               # display the version number
-```
-
-`CHALLENGE_ID` can be a 24-character ID from vimgolf.com, or a plus-prefixed ID corresponding to the
-last invocation of `vimgolf list`. For example, a `CHALLENGE_ID` of `+6` would correspond to the
-sixth challenge presented in the most recent call to `vimgolf list`.
-
-Demo
-----
-
-<img src="https://github.com/dstein64/vimgolf/blob/master/screencast.gif?raw=true" width="800"/>
 
 License
 -------
