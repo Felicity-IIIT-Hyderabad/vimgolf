@@ -144,8 +144,12 @@ for log in stale_existing_logs:
 HttpResponse = namedtuple('HttpResponse', 'code msg headers body')
 
 
+def get_headers():
+    return {'Authorization': get_api_key()}
+
+
 def http_request(url, data=None):
-    request = urllib.request.Request(url, data, headers={'User-Agent': USER_AGENT})
+    request = urllib.request.Request(url, data, headers=get_headers())
     response = urllib.request.urlopen(request)
     try:
         charset = response.getheader('Content-Type').split(';')[1].split('=')[1].strip()
@@ -287,9 +291,7 @@ def show_challenge_id_error():
 
 
 def validate_api_key(api_key):
-    return True
-    # TODO
-    return api_key is not None and re.match(r'[\w\d]{32}', api_key)
+    return api_key is not None and len(api_key) > 0
 
 
 def get_api_key():
@@ -357,10 +359,9 @@ def upload_result(challenge_id, api_key, raw_keys):
     try:
         url = urllib.parse.urljoin(GOLF_HOST, f'/submit/{challenge_id}')
         data_dict = {
-            'apikey': api_key,
             'entry': raw_keys,
         }
-        response = requests.post(url, data=data_dict)
+        response = requests.post(url, data=data_dict, headers=get_headers())
 
         if response.status_code >= 400:
             return Status.FAILURE, response.text
@@ -726,6 +727,19 @@ def main(argv=None):
         else:
             status = show(argv[2])
     elif command == 'config':
+        # send request to server and get it from there
+        # Doesn't work
+        # req_url = urllib.parse.urljoin(GOLF_HOST, '/apikey')
+        # status = Status.SUCCESS
+        #
+        # try:
+        #     result = http_request(req_url)
+        #     apikey = json.loads(result.body)
+        #     status = config(api_key=apikey['apikey'])
+        #     assert status == Status.SUCCESS
+        # except Exception:
+        #     pass
+
         if not len(argv) in (2, 3):
             usage = 'Usage: "vimgolf config [API_KEY]"'
             write(usage, stream=sys.stderr, color='red')
