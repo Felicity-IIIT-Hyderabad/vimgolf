@@ -286,6 +286,8 @@ def show_challenge_id_error():
 
 
 def validate_api_key(api_key):
+    return True
+    # TODO
     return api_key is not None and re.match(r'[\w\d]{32}', api_key)
 
 
@@ -345,7 +347,6 @@ Challenge = namedtuple('Challenge', [
     'in_extension',
     'out_extension',
     'id',
-    'compliant',
     'api_key'
 ])
 
@@ -354,9 +355,8 @@ def upload_result(challenge_id, api_key, raw_keys):
     logger.info('upload_result(...)')
     status = Status.FAILURE
     try:
-        url = urllib.parse.urljoin(GOLF_HOST, '/submit')
+        url = urllib.parse.urljoin(GOLF_HOST, f'/submit/{challenge_id}')
         data_dict = {
-            'challenge_id': challenge_id,
             'apikey': api_key,
             'entry': raw_keys,
         }
@@ -365,7 +365,8 @@ def upload_result(challenge_id, api_key, raw_keys):
         message = json.loads(response.body)
         if message.get('status') == 'ok':
             status = Status.SUCCESS
-    except Exception:
+    except Exception as err:
+        print(err)
         logger.exception('upload failed')
     return status
 
@@ -482,7 +483,7 @@ def play(challenge, workspace):
             write('Your score for this failed attempt:', color='red')
         write(score)
 
-        upload_eligible = challenge.id and challenge.compliant and challenge.api_key
+        upload_eligible = challenge.id and challenge.api_key
 
         while True:
             # Generate the menu items inside the loop since it can change across iterations
@@ -538,7 +539,6 @@ def local(infile, outfile):
         in_extension=in_extension,
         out_extension=out_extension,
         id=None,
-        compliant=None,
         api_key=None)
     with tempfile.TemporaryDirectory() as d:
         status = play(challenge, d)
@@ -564,21 +564,6 @@ def put(challenge_id):
         url = urllib.parse.urljoin(GOLF_HOST, '/challenges/{}.json'.format(challenge_id))
         response = http_request(url)
         challenge_spec = json.loads(response.body)
-        compliant = challenge_spec.get('client') == RUBY_CLIENT_VERSION_COMPLIANCE
-        if not compliant:
-            message = 'vimgolf=={} is not compliant with {}'.format(__version__, GOLF_HOST)
-            write(message, stream=sys.stderr, color='red')
-            write(f'Uploading to {GOLF_HOST} is disabled', stream=sys.stderr, color='red')
-            write('vimgolf may not function properly', color='red')
-            try:
-                client_compliance_version = StrictVersion(RUBY_CLIENT_VERSION_COMPLIANCE)
-                api_version = StrictVersion(challenge_spec['client'])
-                action = 'upgrade' if api_version > client_compliance_version else 'downgrade'
-            except Exception:
-                action = 'update'
-            write('Please {} vimgolf to a compliant version'.format(action), color='yellow')
-            if not confirm('Try to play without uploads?'):
-                return Status.FAILURE
 
         in_text = format_(challenge_spec['in'])
         out_text = format_(challenge_spec['out'])
@@ -599,7 +584,6 @@ def put(challenge_id):
         in_extension=in_extension,
         out_extension=out_extension,
         id=challenge_id,
-        compliant=compliant,
         api_key=api_key)
     with tempfile.TemporaryDirectory() as d:
         status = play(challenge, d)
