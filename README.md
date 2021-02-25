@@ -12,9 +12,9 @@ Keep your working directory as the repo root.
 
 `python -m vimgolf` shows the list of commands.
 
-First run `python -m vimgolf config` to locally store your api key. This will be used to verify the submission is coming from your user account. You can get your apikey [here](https://events.felicity.iiit.ac.in/vimgolf/apikey).
+First run `python -m vimgolf config <API_KEY>` to locally store your api key. This will be used to verify the submission is coming from your user account. You can get your apikey [here](https://events.felicity.iiit.ac.in/vimgolf/apikey).
 
-Use `python -m vimgolf put 0` to play the 0-th challenge.  You can view all challenges on the main website.
+Use `python -m vimgolf put 0` to play the 0-th challenge. You can view all challenges on the main website.
 
 Good luck and happy golfing!
 
