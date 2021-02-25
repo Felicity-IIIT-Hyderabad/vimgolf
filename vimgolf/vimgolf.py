@@ -662,7 +662,7 @@ def show(challenge_id):
 def config(api_key=None):
     logger.info('config(...)')
 
-    if api_key is not None and not validate_api_key(api_key):
+    if api_key is None or not validate_api_key(api_key):
         show_api_key_error()
         return Status.FAILURE
 
