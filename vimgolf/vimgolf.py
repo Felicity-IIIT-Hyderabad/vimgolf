@@ -68,7 +68,7 @@ if sys.platform == 'win32':
 # * Configuration, Global Variables, and Logging
 # ************************************************************
 
-GOLF_HOST = os.environ.get('GOLF_HOST', 'http://127.0.0.1:5000')
+GOLF_HOST = os.environ.get('GOLF_HOST', 'http://127.0.0.1:5000/vimgolf')
 GOLF_VIM = os.environ.get('GOLF_VIM', 'vim')
 
 USER_AGENT = 'vimgolf'
@@ -364,7 +364,8 @@ def upload_result(challenge_id, api_key, raw_keys):
 
         if response.status_code >= 400:
             return Status.FAILURE, response.text
-        print(response.text)
+        elif response.status_code == 304:
+            write('You already have a better submission on the server', color='yellow')
     except Exception as err:
         logger.exception('upload failed')
         return Status.FAILURE, err
