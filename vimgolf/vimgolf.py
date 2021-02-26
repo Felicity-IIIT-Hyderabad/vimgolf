@@ -13,8 +13,6 @@ import re
 import subprocess
 import sys
 import tempfile
-import urllib.parse
-import urllib.request
 import requests
 
 from vimgolf.html import (
@@ -148,17 +146,9 @@ def get_headers():
     return {'Authorization': get_api_key()}
 
 
-def http_request(url, data=None):
-    request = urllib.request.Request(url, data, headers=get_headers())
-    response = urllib.request.urlopen(request)
-    try:
-        charset = response.getheader('Content-Type').split(';')[1].split('=')[1].strip()
-    except Exception:
-        charset = 'utf-8'
-    body = response.read().decode(charset)
-    output = HttpResponse(
-        code=response.code, msg=response.msg, headers=response.getheaders(), body=body)
-    return output
+def get_request(url, data=None):
+    response = requests.get(url, data=data, headers=get_headers())
+    return response.text
 
 
 def join_lines(string):
@@ -341,7 +331,7 @@ def expand_challenge_id(challenge_id):
 
 
 def get_challenge_url(challenge_id):
-    return urllib.parse.urljoin(GOLF_HOST, '/challenges/{}'.format(challenge_id))
+    return GOLF_HOST + '/challenges/{}'.format(challenge_id)
 
 
 Challenge = namedtuple('Challenge', [
@@ -354,10 +344,10 @@ Challenge = namedtuple('Challenge', [
 ])
 
 
-def upload_result(challenge_id, api_key, raw_keys):
+def upload_result(challenge_id, raw_keys):
     logger.info('upload_result(...)')
     try:
-        url = urllib.parse.urljoin(GOLF_HOST, f'/submit/{challenge_id}')
+        url = GOLF_HOST + f'/submit/{challenge_id}'
         data_dict = {
             'entry': raw_keys,
         }
@@ -508,14 +498,14 @@ def play(challenge, workspace):
                 diff_args = ['-d', '-n', infile, outfile]
                 vim(diff_args)
             elif selection == 'w':
-                upload_status, err_message = upload_result(challenge.id, challenge.api_key, raw_keys)
+                upload_status, err_message = upload_result(challenge.id, raw_keys)
                 if upload_status == Status.SUCCESS:
                     write('Uploaded entry!', color='green')
                     leaderboard_url = get_challenge_url(challenge.id)
                     write('View the leaderboard: {}'.format(leaderboard_url), color='green')
                     upload_eligible = False
                 else:
-                    write('The entry upload has failed', stream=sys.stderr, color='red')
+                    write('The entry upload has failed\nError from server:', stream=sys.stderr, color='red')
                     write(err_message, stream=sys.stderr, color='red')
             else:
                 break
@@ -563,9 +553,10 @@ def put(challenge_id):
 
     try:
         write('Downloading vimgolf challenge {}'.format(challenge_id), color='yellow')
-        url = urllib.parse.urljoin(GOLF_HOST, '/challenges/{}.json'.format(challenge_id))
-        response = http_request(url)
-        challenge_spec = json.loads(response.body)
+        suffix = '/challenges/{}.json'.format(challenge_id)
+        url = GOLF_HOST + suffix
+        response = get_request(url)
+        challenge_spec = json.loads(response)
 
         in_text = format_(challenge_spec['in'])
         out_text = format_(challenge_spec['out'])
@@ -600,17 +591,17 @@ def show(challenge_id):
         if not validate_challenge_id(challenge_id):
             show_challenge_id_error()
             return Status.FAILURE
-        api_url = urllib.parse.urljoin(GOLF_HOST, '/challenges/{}.json'.format(challenge_id))
-        leader_pageurl = urllib.parse.urljoin(GOLF_HOST, '/challenges_leaderboard/{}.json'.format(challenge_id))
-        pageurl = urllib.parse.urljoin(GOLF_HOST, '/challenges/{}'.format(challenge_id))
+        api_url = GOLF_HOST + '/challenges/{}.json'.format(challenge_id)
+        leader_pageurl = GOLF_HOST + '/challenges_leaderboard/{}.json'.format(challenge_id)
+        pageurl = GOLF_HOST + '/challenges/{}'.format(challenge_id)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=MAX_REQUEST_WORKERS) as executor:
-            results = executor.map(http_request, [api_url, leader_pageurl])
+            results = executor.map(get_request, [api_url, leader_pageurl])
             api_response = next(results)
             page_response = next(results)
 
-        challenge_spec = json.loads(api_response.body)
-        leader_list = json.loads(page_response.body)
+        challenge_spec = json.loads(api_response)
+        leader_list = json.loads(page_response)
         start_file = challenge_spec['in']
         if not start_file.endswith('\n'):
             start_file += '\n'
@@ -653,7 +644,7 @@ def show(challenge_id):
     except Exception:
         logger.exception('challenge retrieval failed')
         write('The challenge retrieval has failed', stream=sys.stderr, color='red')
-        write('Please check the challenge ID on vimgolf.com', stream=sys.stderr, color='red')
+        write(f'Please check the challenge ID on {GOLF_HOST}', stream=sys.stderr, color='red')
         return Status.FAILURE
 
     return Status.SUCCESS
@@ -695,10 +686,10 @@ def main(argv=None):
     help_message = (
         'Commands:\n'
         '  vimgolf [help]                # display this help and exit\n'
-        '  vimgolf config [API_KEY]      # configure your vimgolf.com credentials\n'
+        f'  vimgolf config [API_KEY]      # configure your {GOLF_HOST} credentials\n'
         '  vimgolf local INFILE OUTFILE  # launch local challenge\n'
-        '  vimgolf put CHALLENGE_ID      # launch vimgolf.com challenge\n'
-        '  vimgolf show CHALLENGE_ID     # show vimgolf.com challenge\n'
+        f'  vimgolf put CHALLENGE_ID      # launch {GOLF_HOST} challenge\n'
+        f'  vimgolf show CHALLENGE_ID     # show {GOLF_HOST} challenge\n'
         '  vimgolf version               # display the version number'
     )
 
