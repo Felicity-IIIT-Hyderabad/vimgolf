@@ -434,7 +434,8 @@ def play(challenge, workspace):
             '--noplugin',  # no plugins
             '-i', 'NONE',  # don't load .viminfo (e.g., has saved macros, etc.)
             '+0',  # start on line 0
-            '-u', vimrc,  # vimgolf .vimrc
+            # '-u', vimrc,  # vimgolf .vimrc
+            '-u', 'NONE',
             '-U', 'NONE',  # don't load .gvimrc
             '-W', logfile,  # keylog file (overwrites existing)
             infile,
