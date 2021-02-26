@@ -14,6 +14,7 @@ import subprocess
 import sys
 import tempfile
 import requests
+from base64 import b64encode
 
 from vimgolf.html import (
     get_elements_by_classname,
@@ -450,6 +451,7 @@ def play(challenge, workspace):
         with open(logfile, 'rb') as _f:
             # raw keypress representation saved by vim's -w
             raw_keys = _f.read()
+            raw_keys_send = b64encode(raw_keys)
 
         # list of parsed keycode byte strings
         keycodes = parse_keycodes(raw_keys)
@@ -498,7 +500,7 @@ def play(challenge, workspace):
                 diff_args = ['-d', '-n', infile, outfile]
                 vim(diff_args)
             elif selection == 'w':
-                upload_status, err_message = upload_result(challenge.id, raw_keys)
+                upload_status, err_message = upload_result(challenge.id, raw_keys_send)
                 if upload_status == Status.SUCCESS:
                     write('Uploaded entry!', color='green')
                     leaderboard_url = get_challenge_url(challenge.id)
