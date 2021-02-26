@@ -9,8 +9,8 @@ with open('README.md') as f:
     long_description = f.read()
 
 setup(
-    author='Daniel Steinberg',
-    author_email='ds@dannyadam.com',
+    author='Forked by Gaurang Tandon from Daniel Steinberg',
+    author_email='gaurang.tandon@students.iiit.ac.in/ds@dannyadam.com',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',

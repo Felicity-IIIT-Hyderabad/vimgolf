@@ -66,7 +66,7 @@ if sys.platform == 'win32':
 # * Configuration, Global Variables, and Logging
 # ************************************************************
 
-GOLF_HOST = os.environ.get('GOLF_HOST', 'http://127.0.0.1:5000/vimgolf')
+GOLF_HOST = os.environ.get('GOLF_HOST', 'https://events.felicity.iiit.ac.in/vimgolf')
 GOLF_VIM = os.environ.get('GOLF_VIM', 'vim')
 
 USER_AGENT = 'vimgolf'
