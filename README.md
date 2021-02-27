@@ -9,7 +9,7 @@ It acts as the terminal client to the [main website](https://events.felicity.iii
 1. `git clone` this repo so you can pull changes (if any later).
 2. Run `python3 -m pip install -r requirements.txt`.
 3. Keep your working directory as the repo root.
-4. Run `python3 -m vimgolf config "<API_KEY>"` to locally store your api key. This will be used to verify the submission is coming from your user account. You can get your apikey [here](https://events.felicity.iiit.ac.in/vimgolf/apikey). The API key is of the form "Bearer API_KEY" hence it needs to be put in quotes when running the commands.
+4. Run `python3 -m vimgolf config "<API_KEY>"` to locally store your api key. This will be used to verify the submission is coming from your user account. You can get your apikey [here](https://events.felicity.iiit.ac.in/vimgolf/apikey). The "<API_KEY>" is of the form "Bearer TOKEN" hence it needs to be put in quotes when running the command.
 
 ### Usage
 
